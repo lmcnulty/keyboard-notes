@@ -1,0 +1,210 @@
+<!doctype html>
+<html>
+<head>
+	<title>Keyboard</title>
+	<style>
+		:root {
+			--white-key-width: 3em;
+			--black-key-width: 2em;
+			--white-key-height: calc(5 * var(--white-key-width));
+			--black-key-height: calc(3 * var(--white-key-width));
+			font-family: 'Linux Libertine O', serif;
+		}
+		* {
+			box-sizing: border-box;
+		}
+		main {
+			position: relative;
+			height: var(--white-key-height);
+			margin-bottom: 1em;
+			margin-top: 1em;
+		}
+		.keys {
+			display: flex;
+			position: absolute;
+			top: 0em;
+			pointer-events: none;
+		}
+		.keys.white {
+			left: 0em;
+			border: 1px solid black;
+		}
+		.keys.black {
+			left: calc(var(--white-key-width) - var(--black-key-width) / 2);
+		}
+
+		.key {
+			position: relative;
+			font-size: 100%;
+			pointer-events: all;
+		}
+		.key.white {
+			height: var(--white-key-height);
+			width: var(--white-key-width);
+			border: 1px solid black;
+			background: white;
+		}
+		.key.white:hover, .key.white:focus {
+			background: #EEE;
+		}
+		.key.white:active {
+			background: #CCC;
+		}
+		.key.black {
+			height: var(--black-key-height);
+			width: var(--black-key-width);
+			background: black;
+			color: white;
+			border: 2px solid black;
+		}
+		.key.black:hover, .key.black:focus {
+			background: #555;
+		}
+		.key.black:active {
+			background: #999;
+		}
+		.key.black + .key.black {
+			margin-left: calc(var(--white-key-width) - var(--black-key-width));
+		}
+		.key .label {
+			position: absolute;
+			bottom: 0.5em;
+			width: 100%;
+			text-align: center;
+		}
+
+		.phony {
+			visibility: hidden;
+			pointer-events: none;
+		}
+
+		#target {
+			font-size: 300%;
+			display: inline-block;
+			padding: 0rem 1rem;
+			vertical-align: middle;
+		}
+		#results {
+			margin-left: 1em;
+			display: inline-block;
+			overflow-x: scroll;
+			padding: 0rem 1rem;
+			vertical-align: middle;
+		}
+
+		.answer {
+			font-size: 300%;
+		}
+		.answer.correct {
+			color: green;
+		}
+		.answer.incorrect {
+			color: red;
+		}
+		.top-panel {
+			width: 100%;
+			display: flex;
+		}
+	</style>
+</head>
+<body>
+	<div class="top-panel">
+		<span id="target"></span>
+		<span id="results"></span>
+	</div>
+	<main>
+		<div class="white keys"></div>
+		<div class="black keys"></div>
+	</main>
+
+	<label for="level">Level</label>
+	<input type="number" id="level" value="1"/>
+
+	<input type="checkbox" id="show-labels" onchange="toggleLabels()"/>
+	<label for="show-labels">Show labels</label>
+
+	<script>
+		const notes = 'CDEFGAB';
+
+		function main() {
+			createKeyboard();
+			setTarget();
+		}
+
+		function setTarget() {
+			document.getElementById('target').innerHTML = randomChoice([
+				'C', 'F', 'A', 'D', 'B', 'G', 'E', 
+				'C♯', 'F♯', 'A♭', 'A♯', 'D♭', 'D♯', 'B♭', 'G♯', 'G♭', 'E♭', 
+				'C♭', 'B♯', 'F♭', 'E♯',
+			].slice(0, Number(document.getElementById('level').value) + 2 ));
+		}
+
+		function createKeyboard() {
+			const whiteKeyCount = 21;
+			const keyboard  = document.querySelector('main');
+			const whiteKeys = document.querySelector('main > .white.keys');
+			const blackKeys = document.querySelector('main > .black.keys');
+			for (let i = 0; i < whiteKeyCount; i++){
+				const note = notes[i % 7];
+
+				const key = document.createElement('button');
+				key.className = `key white ${note}`;
+				key.setAttribute('tabindex', 100 + i * 2);
+
+				const label = document.createElement('div');
+				label.className = 'label';
+				label.innerHTML = (
+					note == 'C' ? 'B♯<br>' : 
+					note == 'B' ? 'C♭<br>' : 
+					note == 'F' ? 'E♯<br>' :
+					note == 'E' ? 'F♭<br>' : ''
+				) + note;
+
+				key.append(label);
+				whiteKeys.appendChild(key);
+			}
+			for (let i = 0; i < whiteKeyCount - 1; i++){
+				const key = document.createElement('button');
+				key.className = `key black`;
+				key.setAttribute('tabindex', 100 + i * 2 + 1);
+
+				if (i % 7 == 2 || i % 7 == 6) {
+					key.className += ' phony';
+				} else {
+					key.className += ` ${notes[i % 7]}-sharp ${notes[(i + 1) % 7]}-flat`;
+
+					const label = document.createElement('div');
+					label.className = 'label';
+					label.innerHTML = `${notes[i % 7]}♯ ${notes[(i + 1) % 7]}♭`;
+					key.appendChild(label);
+				}
+				blackKeys.appendChild(key);
+			}
+			for (const key of document.querySelectorAll('.key')) {
+				key.addEventListener('click', (evt) => {
+					const note = document.getElementById('target').innerHTML;
+					const noteClass = note.replace('♭', '-flat').replace('♯', '-sharp');
+					document.getElementById('results').innerHTML = 
+						(key.classList.contains(noteClass) 
+							? `<span class="answer correct">${note}</span>`
+							: `<span class="answer incorrect">${note}</span>`
+						) + document.getElementById('results').innerHTML
+					setTarget();
+				});
+			}
+			toggleLabels();
+		}
+
+		function toggleLabels() {
+			const checked = document.getElementById('show-labels').checked;
+			for (const label of document.querySelectorAll('.label')) {
+				label.style.visibility =  checked ? 'visible' : 'hidden';
+			}
+		}
+
+		var randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+		main();
+	</script>
+</body>
+</html>
