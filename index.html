@@ -2,10 +2,11 @@
 <html>
 <head>
 	<title>Keyboard</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style>
 		:root {
-			--white-key-width: 3em;
-			--black-key-width: 2em;
+			--white-key-width: 60px;
+			--black-key-width: 40px;
 			--white-key-height: calc(5 * var(--white-key-width));
 			--black-key-height: calc(3 * var(--white-key-width));
 			font-family: 'Linux Libertine O', serif;
@@ -13,11 +14,25 @@
 		* {
 			box-sizing: border-box;
 		}
+		html {
+			height: 100%;
+			overflow-x: hidden;
+		}
+		body {
+			background: whitesmoke;
+			display: flex;
+			flex-direction: column;
+			gap: 1em;	
+			height: 100%;
+			justify-content: center;
+			margin: 0px;
+			padding-bottom: 4em;
+		}
 		main {
 			position: relative;
 			height: var(--white-key-height);
-			margin-bottom: 1em;
-			margin-top: 1em;
+			margin-left: auto;
+			margin-right: auto;
 		}
 		.keys {
 			display: flex;
@@ -27,7 +42,9 @@
 		}
 		.keys.white {
 			left: 0em;
-			border: 1px solid black;
+			border-radius: 4px 4px 0px 0px;
+			border-top: 2px solid #999;
+			overflow: hidden;
 		}
 		.keys.black {
 			left: calc(var(--white-key-width) - var(--black-key-width) / 2);
@@ -37,31 +54,41 @@
 			position: relative;
 			font-size: 100%;
 			pointer-events: all;
+			border-radius: 0px 0px 4px 4px;
 		}
 		.key.white {
 			height: var(--white-key-height);
 			width: var(--white-key-width);
-			border: 1px solid black;
+			border: 2px solid #999;
+			border-top: none;
+			border-left: none;
 			background: white;
+			box-shadow: inset 0px 0px 5px 3px rgba(0, 0, 0, 0.15);
+		}
+		.key.white:first-child {
+			border-left: 2px solid #999;
 		}
 		.key.white:hover, .key.white:focus {
 			background: #EEE;
 		}
 		.key.white:active {
-			background: #CCC;
+			background: linear-gradient(#EEE, #DDD);
+			box-shadow: inset 0px 0px 5px 3px rgba(0, 0, 0, 0.25);
 		}
 		.key.black {
 			height: var(--black-key-height);
 			width: var(--black-key-width);
-			background: black;
+			background: #333;
 			color: white;
-			border: 2px solid black;
+			border: 2px solid #444;
+			box-shadow: inset 0px -4px 4px 5px rgba(255, 255, 255, 0.2);
 		}
 		.key.black:hover, .key.black:focus {
-			background: #555;
+			background: #444;
 		}
 		.key.black:active {
-			background: #999;
+			background: linear-gradient(#444, #222);
+			box-shadow: inset 0px -4px 4px 5px rgba(255, 255, 255, 0.0);
 		}
 		.key.black + .key.black {
 			margin-left: calc(var(--white-key-width) - var(--black-key-width));
@@ -102,26 +129,61 @@
 			color: red;
 		}
 		.top-panel {
-			width: 100%;
 			display: flex;
+			margin-left: auto;
+			margin-right: auto;
+		}
+		.options {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 2em;
+		}
+		.options > div {
+			display: flex;
+			align-items: center;
+			gap: 1ch;
+		}
+
+		.octave-2, .octave-3, .octave-4 {
+			display: none;
+		}
+		main, .top-panel { 
+			width: calc(var(--white-key-width) * 7);
+		}
+		@media only screen and (min-width: 850px) {
+			.octave-2 { display: block; }
+			main, .top-panel { 
+				width: calc(var(--white-key-width) * 14);
+			}
+		}
+		@media only screen and (min-width: 1260px) {
+			.octave-2, .octave-3 { display: unset; }
+			main, .top-panel { 
+				width: calc(var(--white-key-width) * 21);
+			}
 		}
 	</style>
 </head>
 <body>
-	<div class="top-panel">
+	<header class="top-panel">
 		<span id="target"></span>
 		<span id="results"></span>
-	</div>
+	</header>
 	<main>
 		<div class="white keys"></div>
 		<div class="black keys"></div>
 	</main>
-
-	<label for="level">Level</label>
-	<input type="range" id="level" min="1" max="19" />
-
-	<input type="checkbox" id="show-labels" onchange="toggleLabels()"/>
-	<label for="show-labels">Show labels</label>
+	<footer class="options">
+		<div>
+			<label for="level">Difficulty</label>
+			<input type="range" id="level" min="1" max="95" />
+		</div>
+		<div>
+			<input type="checkbox" id="show-labels" onchange="toggleLabels()"/>
+			<label for="show-labels">Show labels</label>
+		</div>
+	</footer>
 
 	<script>
 		const notes = 'CDEFGAB';
@@ -132,23 +194,31 @@
 		}
 
 		function setTarget() {
-			document.getElementById('target').innerHTML = randomChoice([
-				'C', 'F', 'A', 'D', 'B', 'G', 'E', 
-				'C♯', 'F♯', 'A♭', 'A♯', 'D♭', 'D♯', 'B♭', 'G♯', 'G♭', 'E♭', 
-				'C♭', 'B♯', 'F♭', 'E♯',
-			].slice(0, Number(document.getElementById('level').value) + 2 ));
+			const difficulty = Number(document.getElementById('level').value);
+			const maxNote = Math.floor(difficulty / 5) + 2;
+			document.getElementById('target').innerHTML = randomChoice(
+				[
+					'C', 'F', 'A', 'D', 'B', 'G', 'E', 
+					'C♯', 'F♯', 'A♭', 'A♯', 'D♭', 'D♯', 'B♭', 'G♯', 'G♭', 'E♭', 
+					'C♭', 'B♯', 'F♭', 'E♯',
+				].slice(0, maxNote)
+			);
 		}
 
 		function createKeyboard() {
-			const whiteKeyCount = 21;
+			const whiteKeyCount = 28;
 			const keyboard  = document.querySelector('main');
 			const whiteKeys = document.querySelector('main > .white.keys');
 			const blackKeys = document.querySelector('main > .black.keys');
+			let octave = 0;
 			for (let i = 0; i < whiteKeyCount; i++){
+				if (i % 7 == 0) {
+					octave += 1;
+				}
 				const note = notes[i % 7];
 
 				const key = document.createElement('button');
-				key.className = `key white ${note}`;
+				key.className = `key white ${note} octave-${octave}`;
 				key.setAttribute('tabindex', 100 + i * 2);
 
 				const label = document.createElement('div');
@@ -163,7 +233,11 @@
 				key.append(label);
 				whiteKeys.appendChild(key);
 			}
+			octave = 0;
 			for (let i = 0; i < whiteKeyCount - 1; i++){
+				if (i % 7 == 0) {
+					octave += 1;
+				}
 				const key = document.createElement('button');
 				key.className = `key black`;
 				key.setAttribute('tabindex', 100 + i * 2 + 1);
@@ -171,7 +245,7 @@
 				if (i % 7 == 2 || i % 7 == 6) {
 					key.className += ' phony';
 				} else {
-					key.className += ` ${notes[i % 7]}-sharp ${notes[(i + 1) % 7]}-flat`;
+					key.className += ` ${notes[i % 7]}-sharp ${notes[(i + 1) % 7]}-flat octave-${octave}`;
 
 					const label = document.createElement('div');
 					label.className = 'label';
@@ -184,8 +258,14 @@
 				key.addEventListener('click', (evt) => {
 					const note = document.getElementById('target').innerHTML;
 					const noteClass = note.replace('♭', '-flat').replace('♯', '-sharp');
+					const correct = key.classList.contains(noteClass);
+					if (!document.getElementById('show-labels').checked) {
+						document.getElementById('level').value = Number(
+							document.getElementById('level').value
+						) + (correct ? 1 : -1);
+					}
 					document.getElementById('results').innerHTML = 
-						(key.classList.contains(noteClass) 
+						(correct 
 							? `<span class="answer correct">${note}</span>`
 							: `<span class="answer incorrect">${note}</span>`
 						) + document.getElementById('results').innerHTML
